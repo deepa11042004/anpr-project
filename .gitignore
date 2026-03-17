@@ -1,0 +1,47 @@
+# Maven
+target/
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+pom.xml.next
+release.properties
+
+# IDE
+.idea/
+*.iml
+.vscode/
+*.swp
+*.swo
+.project
+.classpath
+.settings/
+
+# Node
+frontend/node_modules/
+frontend/dist/
+frontend/.npm
+
+# Logs
+*.log
+logs/
+
+# H2 Database
+data/
+*.db
+
+# Google credentials (should not be committed)
+**/google-credentials.json
+**/credentials.json
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Build outputs
+*.jar
+*.war
+
+# Environment files
+.env
+.env.local
+.env.*.local

@@ -1,0 +1,80 @@
+spring:
+  application:
+    name: anpr-access-control
+  
+  # H2 Database Configuration
+  datasource:
+    url: jdbc:h2:file:./data/anprdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    driverClassName: org.h2.Driver
+    username: sa
+    password: 
+  
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
+      settings:
+        web-allow-others: false
+  
+  jpa:
+    database-platform: org.hibernate.dialect.H2Dialect
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: true
+
+  # Jackson Configuration
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false
+    default-property-inclusion: non_null
+
+server:
+  port: 8080
+
+# JWT Configuration
+jwt:
+  secret: YourSuperSecretKeyForJWTAuthenticationMustBeAtLeast256BitsLongForHS256Algorithm123456789
+  expiration: 86400000  # 24 hours in milliseconds
+
+# Google Sheets Configuration
+google:
+  sheets:
+    spreadsheet-id: 13gDA8u2bShiRtNmJLhqXas2M4kwVdlHwd3_c9NW1HtI
+    credentials-file: src/main/resources/google-credentials.json
+    # Sheet name containing vehicle data
+    sheet-name: anpr-datasheet
+    # Column mappings (0-indexed)
+    columns:
+      date: 0
+      client-code: 1
+      company-name: 2
+      order-number: 3
+      product-type: 4
+      quantity: 5
+      vehicle-number-1: 6
+      vehicle-number-2: 7
+      driver-name: 8
+      status: 9
+      location: 10
+
+# ANPR Configuration
+anpr:
+  min-confidence-score: 85
+  # Camera relay endpoint template (IP will be replaced)
+  relay-endpoint-template: http://{ip}/ISAPI/System/IO/outputs/1/trigger
+  # Authentication for camera (if required)
+  camera:
+    username: admin
+    password: admin123
+
+# Logging Configuration
+logging:
+  level:
+    root: INFO
+    com.anpr: DEBUG
+    org.springframework.security: INFO
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
