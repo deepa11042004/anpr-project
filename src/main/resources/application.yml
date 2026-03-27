@@ -39,30 +39,15 @@ jwt:
   secret: YourSuperSecretKeyForJWTAuthenticationMustBeAtLeast256BitsLongForHS256Algorithm123456789
   expiration: 86400000  # 24 hours in milliseconds
 
-# Google Sheets Configuration
-google:
-  sheets:
-    spreadsheet-id: 13gDA8u2bShiRtNmJLhqXas2M4kwVdlHwd3_c9NW1HtI
-    credentials-file: src/main/resources/google-credentials.json
-    # Sheet name containing vehicle data
-    sheet-name: anpr-datasheet
-    # Column mappings (0-indexed)
-    columns:
-      date: 0
-      client-code: 1
-      company-name: 2
-      order-number: 3
-      product-type: 4
-      quantity: 5
-      vehicle-number-1: 6
-      vehicle-number-2: 7
-      driver-name: 8
-      status: 9
-      location: 10
-
 # ANPR Configuration
 anpr:
   min-confidence-score: 85
+  # Optional fallback plates for local testing if an external source is unavailable
+  authorized-plates: []
+  erp:
+    bootstrap-enabled: true
+    reload-on-startup: false
+    csv-resource: file:./Database_Schema.csv
   # Camera relay endpoint template (IP will be replaced)
   relay-endpoint-template: http://{ip}/ISAPI/System/IO/outputs/1/trigger
   # Authentication for camera (if required)

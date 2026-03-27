@@ -1,11 +1,11 @@
 # ANPR-Based Vehicle Entry Access Control System
 
-A comprehensive middleware system for Automatic Number Plate Recognition (ANPR) based vehicle access control. This system integrates with ANPR cameras, validates vehicles against a Google Sheets database, and controls boom gates.
+A comprehensive middleware system for Automatic Number Plate Recognition (ANPR) based vehicle access control. This system integrates with ANPR cameras, validates vehicles against an authorization data source, and controls boom gates.
 
 ## Features
 
 - **ANPR Integration**: Receives events from ANPR cameras via webhook
-- **Google Sheets Integration**: Validates vehicles against scheduled entries in Google Sheets
+- **Authorization Source Integration**: Validates vehicles against scheduled entries from a configurable source
 - **Boom Gate Control**: Automatically triggers gate opening for authorized vehicles
 - **JWT Authentication**: Secure role-based access control (SUPER_ADMIN, ADMIN, OPERATOR)
 - **Real-time Dashboard**: Monitor vehicle entries in real-time
@@ -20,7 +20,6 @@ A comprehensive middleware system for Automatic Number Plate Recognition (ANPR) 
 - Spring Security with JWT
 - Spring Data JPA
 - H2 Database (embedded)
-- Google Sheets API
 
 ### Frontend
 - React 18
@@ -95,7 +94,6 @@ anpr-project/
     │       ├── AuthService.java
     │       ├── AnprService.java
     │       ├── AuditLogService.java
-    │       ├── GoogleSheetsIntegrationService.java
     │       └── BoomGateTriggerService.java
     └── resources/
         └── application.yml
@@ -109,32 +107,19 @@ anpr-project/
 - Maven 3.6+
 - Node.js 18+ (will be auto-installed by Maven during build)
 
-### Google Sheets Setup
+### Authorization Source Setup
 
-1. Create a Google Cloud Project
-2. Enable the Google Sheets API
-3. Create a Service Account and download the credentials JSON
-4. Share your Google Sheet with the service account email
-5. Configure the credentials in `application.yml`
-
-### Google Sheet Format
-
-Your Google Sheet should have the following columns:
-| Date | Client Code | Company Name | Order Number | Product Type | Quantity | Vehicle Number 1 | Vehicle Number 2 | Driver Name | Status | Location |
+Configure your external authorization source and ensure it provides the vehicle and schedule fields needed by the middleware.
 
 ### Configuration
 
 Update `src/main/resources/application.yml`:
 
 ```yaml
-google:
-  sheets:
-    spreadsheet-id: YOUR_SPREADSHEET_ID_HERE
-    credentials-file: /path/to/google-credentials.json
-    sheet-name: VehicleSchedule
-
 anpr:
   min-confidence-score: 85
+  # Optional fallback list for local testing
+  authorized-plates: ["ABC1234", "BCA8284"]
   camera:
     username: admin
     password: your-camera-password

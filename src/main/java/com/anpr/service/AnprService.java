@@ -8,7 +8,6 @@ import com.anpr.entity.AuditLog;
 import com.anpr.entity.AuthorizationOutcome;
 import com.anpr.entity.GateAction;
 import com.anpr.repository.AuditLogRepository;
-import com.anpr.service.GoogleSheetsIntegrationService.VehicleAuthorizationResult;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -17,18 +16,24 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Locale;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 @Slf4j
 public class AnprService {
 
-    private final GoogleSheetsIntegrationService googleSheetsService;
     private final BoomGateTriggerService boomGateTriggerService;
     private final AuditLogRepository auditLogRepository;
 
     @Value("${anpr.min-confidence-score:85}")
     private double minConfidenceScore;
+
+    @Value("${anpr.authorized-plates:}")
+    private String authorizedPlatesConfig;
 
     /**
      * Process an ANPR event from the camera
@@ -49,7 +54,7 @@ public class AnprService {
         }
 
         // Normalize the plate
-        String normalizedPlate = googleSheetsService.normalizePlate(originalPlate);
+        String normalizedPlate = normalizePlate(originalPlate);
         log.info("Normalized plate: {} -> {}", originalPlate, normalizedPlate);
 
         // Check confidence score
@@ -59,14 +64,12 @@ public class AnprService {
                     String.format("Low confidence score: %.1f (minimum: %.1f)", confidence, minConfidenceScore));
         }
 
-        // Check authorization with Google Sheets
-        VehicleAuthorizationResult authResult = googleSheetsService.checkVehicleAuthorization(normalizedPlate);
+        VehicleAuthorizationResult authResult = checkVehicleAuthorization(normalizedPlate);
 
         if (authResult.isAuthorized()) {
             return processApproval(request, normalizedPlate, authResult.getSchedule());
         } else if (!authResult.isConfigured()) {
-            // If Google Sheets is not configured, log warning but still reject
-            log.warn("Google Sheets not configured - rejecting vehicle by default");
+            log.warn("Vehicle authorization source not configured - rejecting vehicle by default");
             return processRejection(request, normalizedPlate, 
                     "Authorization service not configured");
         } else {
@@ -82,7 +85,7 @@ public class AnprService {
         log.info("Processing manual override for plate: {} by user: {}", 
                 request.getVehicleNumber(), userId);
 
-        String normalizedPlate = googleSheetsService.normalizePlate(request.getVehicleNumber());
+        String normalizedPlate = normalizePlate(request.getVehicleNumber());
         String cameraIp = request.getCameraIp();
         GateAction gateAction = GateAction.REMAINED_CLOSED;
 
@@ -232,6 +235,66 @@ public class AnprService {
                 log.warn("Unable to parse timestamp: {}, using current time", dateTimeStr);
                 return LocalDateTime.now();
             }
+        }
+    }
+
+    private String normalizePlate(String plate) {
+        if (plate == null) {
+            return null;
+        }
+        return plate.replaceAll("\\s+", "").toUpperCase(Locale.ROOT).trim();
+    }
+
+    private VehicleAuthorizationResult checkVehicleAuthorization(String normalizedPlate) {
+        if (normalizedPlate == null || normalizedPlate.isBlank()) {
+            return new VehicleAuthorizationResult(false, "License plate is empty", null, true);
+        }
+
+        List<String> authorizedPlates = Arrays.stream(authorizedPlatesConfig.split(","))
+                .map(String::trim)
+                .filter(value -> !value.isBlank())
+                .map(this::normalizePlate)
+                .collect(Collectors.toList());
+
+        if (authorizedPlates.isEmpty()) {
+            return new VehicleAuthorizationResult(false, "No authorization source configured", null, false);
+        }
+
+        boolean authorized = authorizedPlates.contains(normalizedPlate);
+        if (!authorized) {
+            return new VehicleAuthorizationResult(false, "Vehicle not found in authorized source", null, true);
+        }
+
+        return new VehicleAuthorizationResult(true, "Vehicle is authorized", null, true);
+    }
+
+    private static class VehicleAuthorizationResult {
+        private final boolean authorized;
+        private final String message;
+        private final VehicleSchedule schedule;
+        private final boolean configured;
+
+        private VehicleAuthorizationResult(boolean authorized, String message, VehicleSchedule schedule, boolean configured) {
+            this.authorized = authorized;
+            this.message = message;
+            this.schedule = schedule;
+            this.configured = configured;
+        }
+
+        public boolean isAuthorized() {
+            return authorized;
+        }
+
+        public String getMessage() {
+            return message;
+        }
+
+        public VehicleSchedule getSchedule() {
+            return schedule;
+        }
+
+        public boolean isConfigured() {
+            return configured;
         }
     }
 }

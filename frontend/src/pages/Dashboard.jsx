@@ -174,7 +174,7 @@ const Dashboard = () => {
               <span className="badge badge-success">Connected</span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-gray-600">Google Sheets</span>
+              <span className="text-gray-600">Authorization Source</span>
               <span className="badge badge-info">Configured</span>
             </div>
           </div>

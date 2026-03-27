@@ -30,7 +30,6 @@ data/
 *.db
 
 # Google credentials (should not be committed)
-**/google-credentials.json
 **/credentials.json
 
 # OS files
