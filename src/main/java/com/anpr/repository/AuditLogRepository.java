@@ -10,6 +10,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
+import java.time.LocalDate;
 import java.util.List;
 
 @Repository
@@ -54,4 +55,13 @@ public interface AuditLogRepository extends JpaRepository<AuditLog, Long> {
     
     // Entries after a specific timestamp for polling
     List<AuditLog> findByTimestampAfterOrderByTimestampDesc(LocalDateTime after);
+
+    boolean existsByNormalizedPlateAndAuthorizationOutcomeAndTimestampAfter(
+            String normalizedPlate,
+            AuthorizationOutcome authorizationOutcome,
+            LocalDateTime timestamp);
+
+    List<AuditLog> findByAuthorizationOutcomeAndUpliftDate(
+            AuthorizationOutcome authorizationOutcome,
+            LocalDate upliftDate);
 }

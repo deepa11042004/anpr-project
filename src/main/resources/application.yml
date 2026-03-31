@@ -42,12 +42,17 @@ jwt:
 # ANPR Configuration
 anpr:
   min-confidence-score: 85
-  # Optional fallback plates for local testing if an external source is unavailable
-  authorized-plates: []
   erp:
     bootstrap-enabled: true
     reload-on-startup: false
     csv-resource: file:./Database_Schema.csv
+  decision:
+    allowed-statuses: SECURITY,ACTIVE
+    allowed-directions: APPROACH
+    allowed-locations:
+    max-quantity: 100000
+    enforce-queue-order: true
+    reopen-cooldown-minutes: 5
   # Camera relay endpoint template (IP will be replaced)
   relay-endpoint-template: http://{ip}/ISAPI/System/IO/outputs/1/trigger
   # Authentication for camera (if required)

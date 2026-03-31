@@ -3,10 +3,10 @@ package com.anpr.service;
 import com.anpr.dto.AnprEventRequest;
 import com.anpr.dto.AnprEventResponse;
 import com.anpr.dto.ManualOverrideRequest;
-import com.anpr.dto.VehicleSchedule;
 import com.anpr.entity.AuditLog;
 import com.anpr.entity.AuthorizationOutcome;
 import com.anpr.entity.GateAction;
+import com.anpr.entity.ScheduledVehicle;
 import com.anpr.repository.AuditLogRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -15,25 +15,24 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.Arrays;
-import java.util.List;
 import java.util.Locale;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 @Slf4j
 public class AnprService {
 
+    private final ScheduledVehicleDecisionService scheduledVehicleDecisionService;
     private final BoomGateTriggerService boomGateTriggerService;
     private final AuditLogRepository auditLogRepository;
 
     @Value("${anpr.min-confidence-score:85}")
     private double minConfidenceScore;
 
-    @Value("${anpr.authorized-plates:}")
-    private String authorizedPlatesConfig;
+    @Value("${anpr.decision.reopen-cooldown-minutes:5}")
+    private long reopenCooldownMinutes;
 
     /**
      * Process an ANPR event from the camera
@@ -45,7 +44,7 @@ public class AnprService {
         // Extract data from request
         String originalPlate = request.getAnpr() != null ? request.getAnpr().getLicensePlate() : null;
         Double confidence = request.getAnpr() != null ? request.getAnpr().getConfidence() : null;
-        String cameraIp = request.getIpAddress();
+        LocalDateTime eventTime = parseDateTime(request.getDateTime());
 
         // Validate plate exists
         if (originalPlate == null || originalPlate.isBlank()) {
@@ -64,17 +63,20 @@ public class AnprService {
                     String.format("Low confidence score: %.1f (minimum: %.1f)", confidence, minConfidenceScore));
         }
 
-        VehicleAuthorizationResult authResult = checkVehicleAuthorization(normalizedPlate);
-
-        if (authResult.isAuthorized()) {
-            return processApproval(request, normalizedPlate, authResult.getSchedule());
-        } else if (!authResult.isConfigured()) {
-            log.warn("Vehicle authorization source not configured - rejecting vehicle by default");
-            return processRejection(request, normalizedPlate, 
-                    "Authorization service not configured");
-        } else {
-            return processRejection(request, normalizedPlate, authResult.getMessage());
+        if (isReplayAttempt(normalizedPlate, eventTime)) {
+            return processRejection(request, normalizedPlate,
+                    "Duplicate entry attempt within cooldown window");
         }
+
+        ScheduledVehicleDecisionService.DecisionResult decisionResult =
+                scheduledVehicleDecisionService.evaluate(normalizedPlate, eventTime,
+                        request.getAnpr() != null ? request.getAnpr().getDirection() : null);
+
+        if (decisionResult.isAuthorized()) {
+            return processApproval(request, normalizedPlate, decisionResult.getScheduledVehicle(), decisionResult.getMessage());
+        }
+
+        return processRejection(request, normalizedPlate, decisionResult.getMessage(), decisionResult.getScheduledVehicle());
     }
 
     /**
@@ -124,8 +126,8 @@ public class AnprService {
                 .build();
     }
 
-    private AnprEventResponse processApproval(AnprEventRequest request, String normalizedPlate, 
-                                               VehicleSchedule schedule) {
+    private AnprEventResponse processApproval(AnprEventRequest request, String normalizedPlate,
+                                              ScheduledVehicle schedule, String decisionMessage) {
         log.info("Vehicle {} APPROVED", normalizedPlate);
 
         // Trigger boom gate
@@ -137,17 +139,16 @@ public class AnprService {
         // Create audit log
         AuditLog auditLog = createAuditLog(request, normalizedPlate, 
                 AuthorizationOutcome.APPROVED, gateAction, null);
-        
+
         if (schedule != null) {
-            auditLog.setCompanyName(schedule.getCompanyName());
-            auditLog.setDriverName(schedule.getDriverName());
+            applyScheduleContext(auditLog, schedule);
         }
 
         AuditLog savedLog = auditLogRepository.save(auditLog);
 
         return AnprEventResponse.builder()
                 .success(true)
-                .message("Vehicle authorized - Gate " + (gateAction == GateAction.OPENED ? "opened" : "action failed"))
+                .message(decisionMessage + " - Gate " + (gateAction == GateAction.OPENED ? "opened" : "action failed"))
                 .vehicleNumber(request.getAnpr().getLicensePlate())
                 .normalizedPlate(normalizedPlate)
                 .outcome(AuthorizationOutcome.APPROVED)
@@ -158,11 +159,20 @@ public class AnprService {
 
     private AnprEventResponse processRejection(AnprEventRequest request, String normalizedPlate, 
                                                 String reason) {
+        return processRejection(request, normalizedPlate, reason, null);
+    }
+
+    private AnprEventResponse processRejection(AnprEventRequest request, String normalizedPlate,
+                                               String reason, ScheduledVehicle schedule) {
         log.info("Vehicle {} REJECTED: {}", normalizedPlate, reason);
 
         // Create audit log
         AuditLog auditLog = createAuditLog(request, normalizedPlate, 
                 AuthorizationOutcome.REJECTED, GateAction.REMAINED_CLOSED, reason);
+
+        if (schedule != null) {
+            applyScheduleContext(auditLog, schedule);
+        }
 
         AuditLog savedLog = auditLogRepository.save(auditLog);
 
@@ -218,14 +228,29 @@ public class AnprService {
         return builder.build();
     }
 
+    private void applyScheduleContext(AuditLog auditLog, ScheduledVehicle schedule) {
+        auditLog.setCompanyName(schedule.getOmcName());
+        auditLog.setDriverName(schedule.getDriverName());
+        auditLog.setQueueNo(schedule.getQueueNo());
+        auditLog.setTicketNumber(schedule.getTicketNumber());
+        auditLog.setProductName(schedule.getProductName());
+        auditLog.setRequestedQuantity(schedule.getRequestedQuantity());
+        auditLog.setTruckRegNo(schedule.getTruckRegNo());
+        auditLog.setTrailorNo(schedule.getTrailorNo());
+        auditLog.setUpliftDate(schedule.getUpliftDate());
+        auditLog.setStatus(schedule.getStatus());
+        auditLog.setLocation(schedule.getLocation());
+        auditLog.setOmcCode(schedule.getOmc());
+        auditLog.setUpliftType(schedule.getUpliftType());
+    }
+
     private LocalDateTime parseDateTime(String dateTimeStr) {
         if (dateTimeStr == null || dateTimeStr.isBlank()) {
             return LocalDateTime.now();
         }
 
         try {
-            // Try ISO format first
-            return LocalDateTime.parse(dateTimeStr, DateTimeFormatter.ISO_DATE_TIME);
+            return OffsetDateTime.parse(dateTimeStr, DateTimeFormatter.ISO_DATE_TIME).toLocalDateTime();
         } catch (Exception e1) {
             try {
                 // Try common camera format
@@ -245,56 +270,14 @@ public class AnprService {
         return plate.replaceAll("\\s+", "").toUpperCase(Locale.ROOT).trim();
     }
 
-    private VehicleAuthorizationResult checkVehicleAuthorization(String normalizedPlate) {
+    private boolean isReplayAttempt(String normalizedPlate, LocalDateTime eventTime) {
         if (normalizedPlate == null || normalizedPlate.isBlank()) {
-            return new VehicleAuthorizationResult(false, "License plate is empty", null, true);
+            return false;
         }
-
-        List<String> authorizedPlates = Arrays.stream(authorizedPlatesConfig.split(","))
-                .map(String::trim)
-                .filter(value -> !value.isBlank())
-                .map(this::normalizePlate)
-                .collect(Collectors.toList());
-
-        if (authorizedPlates.isEmpty()) {
-            return new VehicleAuthorizationResult(false, "No authorization source configured", null, false);
-        }
-
-        boolean authorized = authorizedPlates.contains(normalizedPlate);
-        if (!authorized) {
-            return new VehicleAuthorizationResult(false, "Vehicle not found in authorized source", null, true);
-        }
-
-        return new VehicleAuthorizationResult(true, "Vehicle is authorized", null, true);
-    }
-
-    private static class VehicleAuthorizationResult {
-        private final boolean authorized;
-        private final String message;
-        private final VehicleSchedule schedule;
-        private final boolean configured;
-
-        private VehicleAuthorizationResult(boolean authorized, String message, VehicleSchedule schedule, boolean configured) {
-            this.authorized = authorized;
-            this.message = message;
-            this.schedule = schedule;
-            this.configured = configured;
-        }
-
-        public boolean isAuthorized() {
-            return authorized;
-        }
-
-        public String getMessage() {
-            return message;
-        }
-
-        public VehicleSchedule getSchedule() {
-            return schedule;
-        }
-
-        public boolean isConfigured() {
-            return configured;
-        }
+        LocalDateTime cutoff = eventTime.minusMinutes(Math.max(1, reopenCooldownMinutes));
+        return auditLogRepository.existsByNormalizedPlateAndAuthorizationOutcomeAndTimestampAfter(
+                normalizedPlate,
+                AuthorizationOutcome.APPROVED,
+                cutoff);
     }
 }

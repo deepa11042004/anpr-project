@@ -118,8 +118,17 @@ Update `src/main/resources/application.yml`:
 ```yaml
 anpr:
   min-confidence-score: 85
-  # Optional fallback list for local testing
-  authorized-plates: ["ABC1234", "BCA8284"]
+  erp:
+    bootstrap-enabled: true
+    reload-on-startup: false
+    csv-resource: file:./Database_Schema.csv
+  decision:
+    allowed-statuses: SECURITY,ACTIVE
+    allowed-directions: APPROACH
+    allowed-locations:
+    max-quantity: 100000
+    enforce-queue-order: true
+    reopen-cooldown-minutes: 5
   camera:
     username: admin
     password: your-camera-password

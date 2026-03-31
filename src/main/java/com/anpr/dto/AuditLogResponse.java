@@ -8,6 +8,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Data
@@ -34,6 +36,17 @@ public class AuditLogResponse {
     private String vehicleImage;
     private String companyName;
     private String driverName;
+    private Long queueNo;
+    private String ticketNumber;
+    private String productName;
+    private BigDecimal requestedQuantity;
+    private String truckRegNo;
+    private String trailorNo;
+    private LocalDate upliftDate;
+    private String status;
+    private String location;
+    private String omcCode;
+    private String upliftType;
     
     public static AuditLogResponse fromEntity(AuditLog auditLog) {
         return AuditLogResponse.builder()
@@ -56,6 +69,17 @@ public class AuditLogResponse {
                 .vehicleImage(auditLog.getVehicleImage())
                 .companyName(auditLog.getCompanyName())
                 .driverName(auditLog.getDriverName())
+                .queueNo(auditLog.getQueueNo())
+                .ticketNumber(auditLog.getTicketNumber())
+                .productName(auditLog.getProductName())
+                .requestedQuantity(auditLog.getRequestedQuantity())
+                .truckRegNo(auditLog.getTruckRegNo())
+                .trailorNo(auditLog.getTrailorNo())
+                .upliftDate(auditLog.getUpliftDate())
+                .status(auditLog.getStatus())
+                .location(auditLog.getLocation())
+                .omcCode(auditLog.getOmcCode())
+                .upliftType(auditLog.getUpliftType())
                 .build();
     }
 }

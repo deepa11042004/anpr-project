@@ -6,6 +6,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Entity
@@ -77,6 +79,39 @@ public class AuditLog {
 
     @Column(name = "driver_name")
     private String driverName;
+
+    @Column(name = "queue_no")
+    private Long queueNo;
+
+    @Column(name = "ticket_number")
+    private String ticketNumber;
+
+    @Column(name = "product_name")
+    private String productName;
+
+    @Column(name = "requested_quantity")
+    private BigDecimal requestedQuantity;
+
+    @Column(name = "truck_reg_no")
+    private String truckRegNo;
+
+    @Column(name = "trailor_no")
+    private String trailorNo;
+
+    @Column(name = "uplift_date")
+    private LocalDate upliftDate;
+
+    @Column(name = "status")
+    private String status;
+
+    @Column(name = "location")
+    private String location;
+
+    @Column(name = "omc_code")
+    private String omcCode;
+
+    @Column(name = "uplift_type")
+    private String upliftType;
 
     @PrePersist
     protected void onCreate() {
