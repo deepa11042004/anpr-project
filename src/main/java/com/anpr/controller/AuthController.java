@@ -7,6 +7,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -25,8 +26,10 @@ public class AuthController {
     }
 
     @GetMapping("/validate")
-    public ResponseEntity<String> validateToken() {
-        // If this endpoint is reached, token is valid (JWT filter already validated)
-        return ResponseEntity.ok("Token is valid");
+    public ResponseEntity<String> validateToken(Authentication authentication) {
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return ResponseEntity.status(401).body("Token is invalid");
+        }
+        return ResponseEntity.ok("Token is valid for user: " + authentication.getName());
     }
 }

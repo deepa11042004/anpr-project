@@ -41,7 +41,7 @@ public class SecurityConfig {
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .authorizeHttpRequests(auth -> auth
                         // Public endpoints
-                        .requestMatchers("/api/auth/**").permitAll()
+                    .requestMatchers("/api/auth/login").permitAll()
                         .requestMatchers("/api/anpr/event").permitAll() // ANPR webhook - no auth required
                         .requestMatchers("/h2-console/**").permitAll()
                     .requestMatchers("/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**").permitAll()
