@@ -78,4 +78,9 @@ export const systemLogsApi = {
   getLogs: (params) => api.get('/admin/system-logs', { params }),
 };
 
+export const connectivityApi = {
+  testCamera: (data) => api.post('/admin/connectivity/camera/test', data),
+  testBoomGate: (data) => api.post('/admin/connectivity/boom-gate/test', data),
+};
+
 export default api;
