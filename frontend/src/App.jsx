@@ -6,6 +6,7 @@ import Dashboard from './pages/Dashboard';
 import LiveFeed from './pages/LiveFeed';
 import Logs from './pages/Logs';
 import Settings from './pages/Settings';
+import SystemLogs from './pages/SystemLogs';
 
 // Protected Route Component
 const ProtectedRoute = ({ children }) => {
@@ -53,6 +54,7 @@ function AppRoutes() {
         <Route path="dashboard" element={<Dashboard />} />
         <Route path="live-feed" element={<LiveFeed />} />
         <Route path="logs" element={<Logs />} />
+        <Route path="system-logs" element={<SystemLogs />} />
         <Route path="settings" element={<Settings />} />
       </Route>
       

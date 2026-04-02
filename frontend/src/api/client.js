@@ -73,4 +73,8 @@ export const settingsApi = {
   restartApp: () => api.post('/admin/settings/database/restart'),
 };
 
+export const systemLogsApi = {
+  getLogs: (params) => api.get('/admin/system-logs', { params }),
+};
+
 export default api;

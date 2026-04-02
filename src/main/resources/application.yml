@@ -65,9 +65,12 @@ anpr:
 
 # Logging Configuration
 logging:
+  file:
+    name: logs/anpr-access-control.log
   level:
     root: INFO
     com.anpr: DEBUG
     org.springframework.security: INFO
   pattern:
-    console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%5p] - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss} [%5p] [%thread] %logger{36} - %msg%n"

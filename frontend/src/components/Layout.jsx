@@ -4,6 +4,7 @@ import {
   LayoutDashboard, 
   Radio, 
   ClipboardList, 
+  Activity,
   Settings,
   LogOut, 
   Menu,
@@ -29,6 +30,7 @@ const Layout = () => {
   ];
 
   if (hasRole(['SUPER_ADMIN', 'ADMIN'])) {
+    navItems.push({ path: '/system-logs', icon: Activity, label: 'System Logs' });
     navItems.push({ path: '/settings', icon: Settings, label: 'Settings' });
   }
 
