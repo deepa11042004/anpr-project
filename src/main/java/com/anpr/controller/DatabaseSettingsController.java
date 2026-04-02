@@ -51,4 +51,10 @@ public class DatabaseSettingsController {
     public ResponseEntity<ActionResponse> restart() {
         return ResponseEntity.ok(applicationLifecycleService.restartApplication());
     }
+
+    @PostMapping("/reset-default")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN','ADMIN')")
+    public ResponseEntity<ActionResponse> resetDefault() {
+        return ResponseEntity.ok(databaseSettingsService.resetToDefaultConfig());
+    }
 }

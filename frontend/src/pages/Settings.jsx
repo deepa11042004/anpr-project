@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { settingsApi } from '../api/client';
 import { useAuth } from '../context/AuthContext';
-import { Database, Plug, RefreshCw, RotateCcw, Save, ShieldAlert } from 'lucide-react';
+import { Database, Plug, RefreshCw, RotateCcw, Save, ShieldAlert, Undo2 } from 'lucide-react';
 
 const initialForm = {
   host: '',
@@ -15,7 +15,7 @@ const initialForm = {
 const Settings = () => {
   const { hasRole } = useAuth();
   const [form, setForm] = useState(initialForm);
-  const [busy, setBusy] = useState({ test: false, migrate: false, apply: false, restart: false });
+  const [busy, setBusy] = useState({ test: false, migrate: false, apply: false, restart: false, reset: false });
   const [result, setResult] = useState(null);
 
   const canManage = hasRole(['SUPER_ADMIN', 'ADMIN']);
@@ -102,7 +102,7 @@ const Settings = () => {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3 mt-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-3 mt-6">
           <button
             className="btn btn-secondary flex items-center justify-center gap-2"
             onClick={() => runAction('test', () => settingsApi.testConnection(form))}
@@ -128,6 +128,15 @@ const Settings = () => {
           >
             <Save size={16} />
             {busy.apply ? 'Saving...' : 'Apply Config'}
+          </button>
+
+          <button
+            className="btn btn-warning flex items-center justify-center gap-2"
+            onClick={() => runAction('reset', () => settingsApi.resetDefault())}
+            disabled={busy.reset}
+          >
+            <Undo2 size={16} />
+            {busy.reset ? 'Resetting...' : 'Reset to H2 Default'}
           </button>
 
           <button

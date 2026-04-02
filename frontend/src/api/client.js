@@ -71,6 +71,7 @@ export const settingsApi = {
   migrateData: (data) => api.post('/admin/settings/database/migrate', data),
   applyConfig: (data) => api.post('/admin/settings/database/apply-config', data),
   restartApp: () => api.post('/admin/settings/database/restart'),
+  resetDefault: () => api.post('/admin/settings/database/reset-default'),
 };
 
 export const systemLogsApi = {

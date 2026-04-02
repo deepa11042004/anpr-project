@@ -117,6 +117,26 @@ public class DatabaseSettingsService {
         }
     }
 
+    public ActionResponse resetToDefaultConfig() {
+        try {
+            if (Files.exists(RUNTIME_CONFIG_FILE)) {
+                Files.delete(RUNTIME_CONFIG_FILE);
+                log.info("Deleted runtime DB config file: {}", RUNTIME_CONFIG_FILE);
+            }
+
+            return ActionResponse.builder()
+                    .success(true)
+                    .message("Runtime DB override removed. Restart the application to switch back to default H2 configuration.")
+                    .build();
+        } catch (Exception ex) {
+            log.error("Failed to reset runtime DB configuration", ex);
+            return ActionResponse.builder()
+                    .success(false)
+                    .message("Failed to reset config: " + ex.getMessage())
+                    .build();
+        }
+    }
+
     private int migrateUsers(Connection connection) throws Exception {
         List<User> users = userRepository.findAll();
 
