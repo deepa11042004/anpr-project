@@ -4,6 +4,7 @@ import {
   LayoutDashboard, 
   Radio, 
   ClipboardList, 
+  Settings,
   LogOut, 
   Menu,
   X,
@@ -12,7 +13,7 @@ import {
 import { useState } from 'react';
 
 const Layout = () => {
-  const { user, logout } = useAuth();
+  const { user, logout, hasRole } = useAuth();
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
@@ -26,6 +27,10 @@ const Layout = () => {
     { path: '/live-feed', icon: Radio, label: 'Live Feed' },
     { path: '/logs', icon: ClipboardList, label: 'History Logs' },
   ];
+
+  if (hasRole(['SUPER_ADMIN', 'ADMIN'])) {
+    navItems.push({ path: '/settings', icon: Settings, label: 'Settings' });
+  }
 
   const NavItem = ({ path, icon: Icon, label }) => (
     <NavLink

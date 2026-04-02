@@ -1,4 +1,7 @@
 spring:
+  config:
+    import: optional:file:./config/runtime-db.properties
+
   application:
     name: anpr-access-control
   

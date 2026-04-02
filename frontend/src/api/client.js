@@ -28,7 +28,7 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401) {
+    if (error.response?.status === 401 || error.response?.status === 403) {
       // Clear token if unauthorized
       localStorage.removeItem('token');
       localStorage.removeItem('user');
@@ -64,6 +64,13 @@ export const logsApi = {
 // Gate API
 export const gateApi = {
   override: (data) => api.post('/gate/override', data),
+};
+
+export const settingsApi = {
+  testConnection: (data) => api.post('/admin/settings/database/test-connection', data),
+  migrateData: (data) => api.post('/admin/settings/database/migrate', data),
+  applyConfig: (data) => api.post('/admin/settings/database/apply-config', data),
+  restartApp: () => api.post('/admin/settings/database/restart'),
 };
 
 export default api;
