@@ -4,6 +4,7 @@ import {
   LayoutDashboard, 
   Radio, 
   ClipboardList, 
+  BookOpen,
   Cable,
   Activity,
   Settings,
@@ -28,6 +29,7 @@ const Layout = () => {
     { path: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
     { path: '/live-feed', icon: Radio, label: 'Live Feed' },
     { path: '/logs', icon: ClipboardList, label: 'History Logs' },
+    { path: '/documentation', icon: BookOpen, label: 'Documentation' },
   ];
 
   if (hasRole(['SUPER_ADMIN', 'ADMIN'])) {

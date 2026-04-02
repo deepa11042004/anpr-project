@@ -83,4 +83,8 @@ export const connectivityApi = {
   testBoomGate: (data) => api.post('/admin/connectivity/boom-gate/test', data),
 };
 
+export const docsApi = {
+  getDownloadUrl: () => '/api/docs/download',
+};
+
 export default api;

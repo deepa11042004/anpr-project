@@ -191,6 +191,10 @@ const Dashboard = () => {
               <p className="font-medium">Browse Logs</p>
               <p className="text-sm text-gray-500">Search and filter historical entries</p>
             </a>
+            <a href="/documentation" className="block p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+              <p className="font-medium">Setup Documentation</p>
+              <p className="text-sm text-gray-500">Read and download complete deployment and handover guide</p>
+            </a>
           </div>
         </div>
       </div>
